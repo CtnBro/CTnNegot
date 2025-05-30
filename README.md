@@ -47,7 +47,7 @@ itemLabel.Font = Enum.Font.GothamBold
 itemLabel.TextSize = 14
 
 local itemInput = Instance.new("TextBox", main)
-itemInput.PlaceholderText = "ex: Tomato ou Dog"
+itemInput.PlaceholderText = "ex: Candy Blossom"
 itemInput.Position = UDim2.new(0, 10, 0, 80)
 itemInput.Size = UDim2.new(0, 150, 0, 30)
 itemInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
@@ -117,7 +117,7 @@ spawnBtn.MouseButton1Click:Connect(function()
         warn("digita o nome do item burrão")
         return
     end
-    --// firesignal no botão do jogo
+
     local gui = plr.PlayerGui:WaitForChild("MainUI")
     local inputBox = gui:WaitForChild("SeedInput")
     local checkerButton = gui:WaitForChild("CheckerButton")
@@ -125,7 +125,10 @@ spawnBtn.MouseButton1Click:Connect(function()
 
     inputBox.Text = item
     firesignal(checkerButton.MouseButton1Click)
-    wait(0.5)
+
+    -- espera botão ficar ativo
+    repeat wait(0.2) until spawnButton.AutoButtonColor == true or spawnButton.Active == true
+
     firesignal(spawnButton.MouseButton1Click)
 
     print("🌱 SPAWN DO ITEM '" .. item .. "' FEITO MLK 🔥")
@@ -146,5 +149,5 @@ giftBtn.MouseButton1Click:Connect(function()
 
     rs.RemoteEvent.Gift:FireServer(unpack(args))
 
-    print("🎁 PET '" .. item .. "' FOI PRO MLK " .. alvo .. " COM SUCESSO KKKK 💀")
+    print("🎁 PET '" .. item .. "' FOI PRO MLK " .. alvo .. " COM SUCESSO KKKK 💀")
 end)
