@@ -1,113 +1,113 @@
--- INSTÂNCIA INICIAL
-local plr = game.Players.LocalPlayer
-local rs = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- FUNÇÃO: SUGESTÃO DE NOME PARECIDO
-local function getClosestName(input, list)
-	local inputLower = input:lower()
-	local closest, shortest = nil, math.huge
-	for _, obj in pairs(list) do
-		local name = obj.Name:lower()
-		local distance = math.abs(#name - #inputLower)
-		if distance < shortest then
-			shortest = distance
-			closest = obj.Name
-		end
-	end
-	return closest
+local player = Players.LocalPlayer
+local gui = player:WaitForChild("PlayerGui"):WaitForChild("InventoryGui") -- Ajuste se seu GUI tem outro nome
+local seedInput = gui:WaitForChild("SeedInput")
+local spawnButton = gui:WaitForChild("SpawnButton")
+local seedItemsFrame = gui:WaitForChild("SeedItems")
+
+local seedsFolder = ReplicatedStorage:WaitForChild("Seeds")
+
+-- Função para calcular similaridade básica de strings (Levenshtein Distance simplificada)
+local function stringSimilarity(s1, s2)
+    s1 = s1:lower()
+    s2 = s2:lower()
+    local len1 = #s1
+    local len2 = #s2
+
+    local matrix = {}
+    for i = 0, len1 do
+        matrix[i] = {[0] = i}
+    end
+    for j = 0, len2 do
+        matrix[0][j] = j
+    end
+
+    for i = 1, len1 do
+        for j = 1, len2 do
+            local cost = (s1:sub(i,i) == s2:sub(j,j)) and 0 or 1
+            matrix[i][j] = math.min(
+                matrix[i-1][j] + 1,
+                matrix[i][j-1] + 1,
+                matrix[i-1][j-1] + cost
+            )
+        end
+    end
+
+    local maxLen = math.max(len1, len2)
+    if maxLen == 0 then
+        return 1
+    end
+    -- Similaridade entre 0 e 1 (1 = igual, 0 = totalmente diferente)
+    return 1 - (matrix[len1][len2] / maxLen)
 end
 
--- CRIA GUI
-local gui = Instance.new("ScreenGui", plr:WaitForChild("PlayerGui"))
-gui.Name = "1nstaHuntersHub"
+-- Função para sugerir o nome mais parecido
+local function suggestSeedName(name)
+    local bestMatch = nil
+    local bestScore = 0
 
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 350, 0, 250)
-main.Position = UDim2.new(0.3, 0, 0.3, 0)
-main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-main.Active, main.Draggable = true, true
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
+    for _, seed in pairs(seedsFolder:GetChildren()) do
+        local score = stringSimilarity(name, seed.Name)
+        if score > bestScore then
+            bestScore = score
+            bestMatch = seed.Name
+        end
+    end
 
-local title = Instance.new("TextLabel", main)
-title.Text = "1NSTA HUNTERS HUB 🔥"
-title.Size = UDim2.new(1, 0, 0, 40)
-title.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-title.TextColor3 = Color3.new(1, 1, 1)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 20
-Instance.new("UICorner", title).CornerRadius = UDim.new(0, 10)
+    -- Sugere só se for razoavelmente parecido (>0.5)
+    if bestScore > 0.5 then
+        return bestMatch
+    else
+        return nil
+    end
+end
 
-local itemLabel = Instance.new("TextLabel", main)
-itemLabel.Text = "Semente pra Spawn"
-itemLabel.Position = UDim2.new(0, 10, 0, 50)
-itemLabel.Size = UDim2.new(0, 150, 0, 25)
-itemLabel.BackgroundTransparency = 1
-itemLabel.TextColor3 = Color3.new(1, 1, 1)
-itemLabel.Font = Enum.Font.GothamBold
-itemLabel.TextSize = 14
+local function addSeedToInventory(seedName)
+    -- Verifica se já existe no inventário (evita duplicatas)
+    for _, child in pairs(seedItemsFrame:GetChildren()) do
+        if child.Name == seedName then
+            warn("Semente já está no inventário!")
+            return
+        end
+    end
 
-local itemInput = Instance.new("TextBox", main)
-itemInput.PlaceholderText = "ex: Candy Blossom"
-itemInput.Position = UDim2.new(0, 10, 0, 80)
-itemInput.Size = UDim2.new(0, 150, 0, 30)
-itemInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-itemInput.TextColor3 = Color3.new(1, 1, 1)
-itemInput.Font = Enum.Font.GothamBold
-itemInput.TextSize = 14
-Instance.new("UICorner", itemInput)
+    local seedTemplate = seedsFolder:FindFirstChild(seedName)
+    if not seedTemplate then
+        warn("Semente não encontrada para adicionar!")
+        return
+    end
 
-local feedbackLabel = Instance.new("TextLabel", main)
-feedbackLabel.Text = ""
-feedbackLabel.Position = UDim2.new(0, 10, 0, 115)
-feedbackLabel.Size = UDim2.new(1, -20, 0, 20)
-feedbackLabel.BackgroundTransparency = 1
-feedbackLabel.TextColor3 = Color3.new(1, 1, 1)
-feedbackLabel.Font = Enum.Font.Gotham
-feedbackLabel.TextSize = 14
-feedbackLabel.TextWrapped = true
+    -- Clonar e colocar no inventário (assumindo que as sementes são GuiObjects)
+    local clone = seedTemplate:Clone()
+    clone.Parent = seedItemsFrame
+    clone.Name = seedName
+    print("Semente "..seedName.." adicionada ao inventário!")
+end
 
-local spawnBtn = Instance.new("TextButton", main)
-spawnBtn.Text = "SPAWN SEMENTE 🌱"
-spawnBtn.Position = UDim2.new(0, 10, 0, 140)
-spawnBtn.Size = UDim2.new(0, 150, 0, 40)
-spawnBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-spawnBtn.TextColor3 = Color3.new(1, 1, 1)
-spawnBtn.Font = Enum.Font.GothamBold
-spawnBtn.TextSize = 16
-Instance.new("UICorner", spawnBtn)
+spawnButton.MouseButton1Click:Connect(function()
+    local inputName = seedInput.Text
+    if inputName == "" then
+        warn("Digite o nome da semente!")
+        return
+    end
 
--- INVENTÁRIO LOCAL DO PLAYER
-local inv = plr:FindFirstChild("Inventory") or Instance.new("Folder", plr)
-inv.Name = "Inventory"
+    local seed = seedsFolder:FindFirstChild(inputName)
 
-local seedItems = inv:FindFirstChild("Seed Items") or Instance.new("Folder", inv)
-seedItems.Name = "Seed Items"
-
--- BOTÃO DE SPAWN
-spawnBtn.MouseButton1Click:Connect(function()
-	local input = itemInput.Text
-	if input == "" then
-		feedbackLabel.Text = "❌ Digita o nome da semente."
-		return
-	end
-
-	local seedFolder = rs:FindFirstChild("Seeds")
-	if not seedFolder then
-		feedbackLabel.Text = "❌ Pasta 'Seeds' não encontrada no jogo!"
-		return
-	end
-
-	local seed = seedFolder:FindFirstChild(input)
-	if seed then
-		if seedItems:FindFirstChild(seed.Name) then
-			feedbackLabel.Text = "✅ Você já tem a semente '" .. input .. "'!"
-			return
-		end
-		local clone = seed:Clone()
-		clone.Parent = seedItems
-		feedbackLabel.Text = "✅ '" .. input .. "' adicionada à sua Seed Items!"
-	else
-		local similar = getClosestName(input, seedFolder:GetChildren())
-		feedbackLabel.Text = "❌ '" .. input .. "' não existe. Você quis dizer: '" .. similar .. "'?"
-	end
+    if seed then
+        -- Semente existe, adiciona direto
+        addSeedToInventory(inputName)
+    else
+        -- Semente não existe, sugere nome parecido
+        local suggestion = suggestSeedName(inputName)
+        if suggestion then
+            print("Semente não encontrada. Você quis dizer: "..suggestion.." ?")
+            -- Você pode mostrar essa sugestão para o usuário via GUI, aqui só print pra teste
+            -- Se quiser já adicionar a sugestão automaticamente, pode chamar:
+            -- addSeedToInventory(suggestion)
+        else
+            warn("Nenhuma semente parecida encontrada!")
+        end
+    end
 end)
