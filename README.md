@@ -111,34 +111,29 @@ cred.TextSize = 12
 -----------------------------------------
 -- funções brabas
 
+-- SPAWN DE ITEM PARA INVENTÁRIO
 spawnBtn.MouseButton1Click:Connect(function()
     local item = itemInput.Text
     if item == "" then
-        warn("digita o nome do item burrão")
+        warn("❌ Digita o nome do item burrão")
         return
     end
 
-    local gui = plr.PlayerGui:WaitForChild("MainUI")
-    local inputBox = gui:WaitForChild("SeedInput")
-    local checkerButton = gui:WaitForChild("CheckerButton")
-    local spawnButton = gui:WaitForChild("SpawnButton")
-
-    inputBox.Text = item
-    firesignal(checkerButton.MouseButton1Click)
-
-    -- espera botão ficar ativo
-    repeat wait(0.2) until spawnButton.AutoButtonColor == true or spawnButton.Active == true
-
-    firesignal(spawnButton.MouseButton1Click)
-
-    print("🌱 SPAWN DO ITEM '" .. item .. "' FEITO MLK 🔥")
+    local spawnRemote = rs:FindFirstChild("SpawnItem")
+    if spawnRemote and spawnRemote:IsA("RemoteEvent") then
+        spawnRemote:FireServer(item)
+        print("✅ SPAWN do item '" .. item .. "' enviado pro servidor.")
+    else
+        warn("❌ RemoteEvent 'SpawnItem' não encontrado.")
+    end
 end)
 
+-- GIFT DE PET PRA OUTRO PLAYER
 giftBtn.MouseButton1Click:Connect(function()
     local item = itemInput.Text
     local alvo = playerInput.Text
     if item == "" or alvo == "" then
-        warn("digita o item e o player burrão")
+        warn("❌ Digita o item e o nick do mlk")
         return
     end
 
@@ -147,7 +142,10 @@ giftBtn.MouseButton1Click:Connect(function()
         [2] = item
     }
 
-    rs.RemoteEvent.Gift:FireServer(unpack(args))
-
-    print("🎁 PET '" .. item .. "' FOI PRO MLK " .. alvo .. " COM SUCESSO KKKK 💀")
+    if rs:FindFirstChild("Gift") then
+        rs.Gift:FireServer(unpack(args))
+        print("🎁 PET '" .. item .. "' foi pro mlk " .. alvo .. " com sucesso!")
+    else
+        warn("❌ RemoteEvent 'Gift' não encontrado.")
+    end
 end)
