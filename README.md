@@ -4,17 +4,33 @@ PAINEL DE SPAWN + GIFT DE PET 🔥🚩
 by: @1nsta  
 ]]
 
--- services
+-- serviços
 local plr = game.Players.LocalPlayer
-local uis = game:GetService("UserInputService")
 local rs = game:GetService("ReplicatedStorage")
-local tween = game:GetService("TweenService")
 
--- instancia GUI
+-- onde estão as sementes
+local seedFolder = rs:WaitForChild("Seeds")
+
+-- função pra buscar nome parecido
+local function getClosestName(input)
+	local inputLower = input:lower()
+	local closest = nil
+	local shortest = math.huge
+	for _, seed in pairs(seedFolder:GetChildren()) do
+		local name = seed.Name:lower()
+		local distance = math.abs(#name - #inputLower)
+		if distance < shortest then
+			shortest = distance
+			closest = seed.Name
+		end
+	end
+	return closest
+end
+
+-- cria GUI
 local gui = Instance.new("ScreenGui", plr.PlayerGui)
 gui.Name = "1nstaHuntersHub"
 
--- main frame
 local main = Instance.new("Frame", gui)
 main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 main.BorderSizePixel = 0
@@ -22,23 +38,19 @@ main.Size = UDim2.new(0, 350, 0, 250)
 main.Position = UDim2.new(0.3, 0, 0.3, 0)
 main.Active = true
 main.Draggable = true
-
-local UICorner = Instance.new("UICorner", main)
-UICorner.CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
 
 local title = Instance.new("TextLabel", main)
 title.Text = "1NSTA HUNTERS HUB 🔥"
 title.Size = UDim2.new(1, 0, 0, 40)
 title.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextColor3 = Color3.new(1, 1, 1)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 20
-local UICorner2 = Instance.new("UICorner", title)
-UICorner2.CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", title).CornerRadius = UDim.new(0, 10)
 
--- input item
 local itemLabel = Instance.new("TextLabel", main)
-itemLabel.Text = "Item/Pet pra Spawn"
+itemLabel.Text = "Semente pra Spawn"
 itemLabel.Position = UDim2.new(0, 10, 0, 50)
 itemLabel.Size = UDim2.new(0, 150, 0, 25)
 itemLabel.BackgroundTransparency = 1
@@ -56,30 +68,19 @@ itemInput.Font = Enum.Font.GothamBold
 itemInput.TextSize = 14
 Instance.new("UICorner", itemInput)
 
--- input player
-local playerLabel = Instance.new("TextLabel", main)
-playerLabel.Text = "Player pra Gift"
-playerLabel.Position = UDim2.new(0, 190, 0, 50)
-playerLabel.Size = UDim2.new(0, 150, 0, 25)
-playerLabel.BackgroundTransparency = 1
-playerLabel.TextColor3 = Color3.new(1, 1, 1)
-playerLabel.Font = Enum.Font.GothamBold
-playerLabel.TextSize = 14
+local feedbackLabel = Instance.new("TextLabel", main)
+feedbackLabel.Text = ""
+feedbackLabel.Position = UDim2.new(0, 10, 0, 115)
+feedbackLabel.Size = UDim2.new(1, -20, 0, 20)
+feedbackLabel.BackgroundTransparency = 1
+feedbackLabel.TextColor3 = Color3.new(1, 1, 1)
+feedbackLabel.Font = Enum.Font.Gotham
+feedbackLabel.TextSize = 14
+feedbackLabel.TextWrapped = true
 
-local playerInput = Instance.new("TextBox", main)
-playerInput.PlaceholderText = "Nick do mlk"
-playerInput.Position = UDim2.new(0, 190, 0, 80)
-playerInput.Size = UDim2.new(0, 150, 0, 30)
-playerInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-playerInput.TextColor3 = Color3.new(1, 1, 1)
-playerInput.Font = Enum.Font.GothamBold
-playerInput.TextSize = 14
-Instance.new("UICorner", playerInput)
-
--- botao spawn
 local spawnBtn = Instance.new("TextButton", main)
-spawnBtn.Text = "SPAWN ITEM 🌱"
-spawnBtn.Position = UDim2.new(0, 10, 0, 130)
+spawnBtn.Text = "SPAWN SEMENTE 🌱"
+spawnBtn.Position = UDim2.new(0, 10, 0, 140)
 spawnBtn.Size = UDim2.new(0, 150, 0, 40)
 spawnBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
 spawnBtn.TextColor3 = Color3.new(1, 1, 1)
@@ -87,65 +88,34 @@ spawnBtn.Font = Enum.Font.GothamBold
 spawnBtn.TextSize = 16
 Instance.new("UICorner", spawnBtn)
 
--- botao gift
-local giftBtn = Instance.new("TextButton", main)
-giftBtn.Text = "GIFT PET 🎁"
-giftBtn.Position = UDim2.new(0, 190, 0, 130)
-giftBtn.Size = UDim2.new(0, 150, 0, 40)
-giftBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-giftBtn.TextColor3 = Color3.new(1, 1, 1)
-giftBtn.Font = Enum.Font.GothamBold
-giftBtn.TextSize = 16
-Instance.new("UICorner", giftBtn)
+-- INVENTÁRIO LOCAL (cliente)
+local inventory = plr:FindFirstChild("Inventory") or Instance.new("Folder", plr)
+inventory.Name = "Inventory"
 
--- creditos
-local cred = Instance.new("TextLabel", main)
-cred.Text = "by 1NSTA HUNTERS 🚩"
-cred.Size = UDim2.new(1, 0, 0, 25)
-cred.Position = UDim2.new(0, 0, 1, -25)
-cred.BackgroundTransparency = 1
-cred.TextColor3 = Color3.fromRGB(255, 255, 255)
-cred.Font = Enum.Font.GothamBold
-cred.TextSize = 12
+local seedItems = inventory:FindFirstChild("Seed Items") or Instance.new("Folder", inventory)
+seedItems.Name = "Seed Items"
 
------------------------------------------
--- funções brabas
-
--- SPAWN DE ITEM PARA INVENTÁRIO
+-- Ação do botão
 spawnBtn.MouseButton1Click:Connect(function()
-    local item = itemInput.Text
-    if item == "" then
-        warn("❌ Digita o nome do item burrão")
-        return
-    end
+	local input = itemInput.Text
+	if input == "" then
+		feedbackLabel.Text = "❌ Digita o nome da semente."
+		return
+	end
 
-    local spawnRemote = rs:FindFirstChild("SpawnItem")
-    if spawnRemote and spawnRemote:IsA("RemoteEvent") then
-        spawnRemote:FireServer(item)
-        print("✅ SPAWN do item '" .. item .. "' enviado pro servidor.")
-    else
-        warn("❌ RemoteEvent 'SpawnItem' não encontrado.")
-    end
-end)
+	local foundSeed = seedFolder:FindFirstChild(input)
+	if foundSeed then
+		local alreadyOwned = seedItems:FindFirstChild(foundSeed.Name)
+		if alreadyOwned then
+			feedbackLabel.Text = "✅ Você já tem a semente '" .. input .. "'!"
+			return
+		end
 
--- GIFT DE PET PRA OUTRO PLAYER
-giftBtn.MouseButton1Click:Connect(function()
-    local item = itemInput.Text
-    local alvo = playerInput.Text
-    if item == "" or alvo == "" then
-        warn("❌ Digita o item e o nick do mlk")
-        return
-    end
-
-    local args = {
-        [1] = alvo,
-        [2] = item
-    }
-
-    if rs:FindFirstChild("Gift") then
-        rs.Gift:FireServer(unpack(args))
-        print("🎁 PET '" .. item .. "' foi pro mlk " .. alvo .. " com sucesso!")
-    else
-        warn("❌ RemoteEvent 'Gift' não encontrado.")
-    end
+		local clone = foundSeed:Clone()
+		clone.Parent = seedItems
+		feedbackLabel.Text = "✅ '" .. input .. "' adicionada em 'Seed Items'!"
+	else
+		local suggestion = getClosestName(input)
+		feedbackLabel.Text = "❌ Não achei '" .. input .. "'. Você quis dizer: '" .. suggestion .. "'?"
+	end
 end)
