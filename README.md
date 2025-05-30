@@ -1,43 +1,31 @@
---[[  
-1NSTA HUNTERS V1 💀  
-PAINEL DE SPAWN + GIFT DE PET 🔥🚩  
-by: @1nsta  
-]]
-
--- serviços
+-- INSTÂNCIA INICIAL
 local plr = game.Players.LocalPlayer
 local rs = game:GetService("ReplicatedStorage")
 
--- onde estão as sementes
-local seedFolder = rs:WaitForChild("Seeds")
-
--- função pra buscar nome parecido
-local function getClosestName(input)
+-- FUNÇÃO: SUGESTÃO DE NOME PARECIDO
+local function getClosestName(input, list)
 	local inputLower = input:lower()
-	local closest = nil
-	local shortest = math.huge
-	for _, seed in pairs(seedFolder:GetChildren()) do
-		local name = seed.Name:lower()
+	local closest, shortest = nil, math.huge
+	for _, obj in pairs(list) do
+		local name = obj.Name:lower()
 		local distance = math.abs(#name - #inputLower)
 		if distance < shortest then
 			shortest = distance
-			closest = seed.Name
+			closest = obj.Name
 		end
 	end
 	return closest
 end
 
--- cria GUI
-local gui = Instance.new("ScreenGui", plr.PlayerGui)
+-- CRIA GUI
+local gui = Instance.new("ScreenGui", plr:WaitForChild("PlayerGui"))
 gui.Name = "1nstaHuntersHub"
 
 local main = Instance.new("Frame", gui)
-main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-main.BorderSizePixel = 0
 main.Size = UDim2.new(0, 350, 0, 250)
 main.Position = UDim2.new(0.3, 0, 0.3, 0)
-main.Active = true
-main.Draggable = true
+main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+main.Active, main.Draggable = true, true
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
 
 local title = Instance.new("TextLabel", main)
@@ -88,14 +76,14 @@ spawnBtn.Font = Enum.Font.GothamBold
 spawnBtn.TextSize = 16
 Instance.new("UICorner", spawnBtn)
 
--- INVENTÁRIO LOCAL (cliente)
-local inventory = plr:FindFirstChild("Inventory") or Instance.new("Folder", plr)
-inventory.Name = "Inventory"
+-- INVENTÁRIO LOCAL DO PLAYER
+local inv = plr:FindFirstChild("Inventory") or Instance.new("Folder", plr)
+inv.Name = "Inventory"
 
-local seedItems = inventory:FindFirstChild("Seed Items") or Instance.new("Folder", inventory)
+local seedItems = inv:FindFirstChild("Seed Items") or Instance.new("Folder", inv)
 seedItems.Name = "Seed Items"
 
--- Ação do botão
+-- BOTÃO DE SPAWN
 spawnBtn.MouseButton1Click:Connect(function()
 	local input = itemInput.Text
 	if input == "" then
@@ -103,19 +91,23 @@ spawnBtn.MouseButton1Click:Connect(function()
 		return
 	end
 
-	local foundSeed = seedFolder:FindFirstChild(input)
-	if foundSeed then
-		local alreadyOwned = seedItems:FindFirstChild(foundSeed.Name)
-		if alreadyOwned then
+	local seedFolder = rs:FindFirstChild("Seeds")
+	if not seedFolder then
+		feedbackLabel.Text = "❌ Pasta 'Seeds' não encontrada no jogo!"
+		return
+	end
+
+	local seed = seedFolder:FindFirstChild(input)
+	if seed then
+		if seedItems:FindFirstChild(seed.Name) then
 			feedbackLabel.Text = "✅ Você já tem a semente '" .. input .. "'!"
 			return
 		end
-
-		local clone = foundSeed:Clone()
+		local clone = seed:Clone()
 		clone.Parent = seedItems
-		feedbackLabel.Text = "✅ '" .. input .. "' adicionada em 'Seed Items'!"
+		feedbackLabel.Text = "✅ '" .. input .. "' adicionada à sua Seed Items!"
 	else
-		local suggestion = getClosestName(input)
-		feedbackLabel.Text = "❌ Não achei '" .. input .. "'. Você quis dizer: '" .. suggestion .. "'?"
+		local similar = getClosestName(input, seedFolder:GetChildren())
+		feedbackLabel.Text = "❌ '" .. input .. "' não existe. Você quis dizer: '" .. similar .. "'?"
 	end
 end)
